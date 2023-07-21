@@ -3,9 +3,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-
 #Understand and inspect the data
-rev_data = pd.read_csv('cleaned_data.csv', sep=',')
+rev_data = pd.read_csv('cleaned_data.csv')
 
 print(rev_data.head())
 rev_data = rev_data.dropna()
@@ -60,7 +59,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.naive_bayes import ComplementNB
 
 pipeline = Pipeline([
-    ('bow', CountVectorizer()),
+    ('bow', CountVectorizer(lowercase=False)),
     ('classifier', ComplementNB())
 ])
 

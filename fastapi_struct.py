@@ -1,15 +1,17 @@
-from fastapi import FastAPI, Path, HTTPException, Request
+import io
+import pandas as pd
+
+from fastapi import FastAPI, Path, Request
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from fastapi.responses import JSONResponse
 import rating_prediction2
 import rating_prediction
+from starlette.exceptions import HTTPException
 
 from sklearn.naive_bayes import ComplementNB
 from sklearn.pipeline import Pipeline
 
-NLP_model1 = rating_prediction.pipeline
-NLP_model2 = rating_prediction2.rating_model
 
 app = FastAPI()
 
@@ -31,6 +33,7 @@ class Reviews:
         self.rating = rating
 
 
+
 class newReviews(BaseModel):
     id: int
     review: str = Field(min_length= 3, max_length=200)
@@ -50,28 +53,34 @@ class requestReview(BaseModel):
     new_rev: str
 
 
-@app.post("/new_review_predict_with_pipeline/{add_rev}")
+@app.post("/new_review_predict_with_pipeline/add_rev/")
 async def create_rev(new_rev: requestReview):
-    if not new_rev:
+    if not new_rev.new_rev:
         raise HTTPException(status_code=422, detail="Empty review text")
 
-    prediction = rating_prediction.pipeline.predict([new_rev])
-    # Return the prediction as a response
-    return JSONResponse({"prediction": prediction})
+    review_list = [new_rev.new_rev]
+    # Call the prediction function with the DataFrame
+    predictions = rating_prediction.pipeline.predict(review_list)
+
+    # Assuming the prediction function returns a list of predictions
+    prediction = predictions[0]
+    return int(prediction)
 
 
 
-@app.post("/new_review_predict/{new_rev}")
-async def create_rev(add_rev: requestReview):
-    if not add_rev:
+
+@app.post("/new_review_predict/add_rev/")
+async def create_rev(new_rev: requestReview):
+    if not new_rev.new_rev:
         raise HTTPException(status_code=422, detail="Empty review text")
 
-    bow_review = rating_prediction2.bow_transformer.transform(rating_prediction2.text_process(add_rev))
+    review_list = [new_rev.new_rev]
+    bow_review = rating_prediction2.bow_transformer.transform(rating_prediction2.text_process(review_list))
     tfidf_review = rating_prediction2.tfidf_transformer.transform(bow_review)
 
     prediction = rating_prediction2.rating_model.predict(tfidf_review)[0]
     # Return the prediction as a response
-    return JSONResponse({"prediction": prediction})
+    return int(prediction)
 
 
 
